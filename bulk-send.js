@@ -71,12 +71,20 @@ const signatureKeyPairMock = async (accInfo, exchangeAddress) => {
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 (async () => {
+  // JSON Transfer results to write to disk
+
+  var transfer_results = [];
+  var addressToSkip = [];
+  const shouldSkip = (address) => addressToSkip.includes(address);
+  let memo = "Sent w/ https://github.com/tomfuertes/loopring-sdk-bulk-send";
+
   try {
     // console.log({ CHAIN_ID });
     const exchangeAPI = new sdk.ExchangeAPI({ chainId: CHAIN_ID });
     const userAPI = new sdk.UserAPI({ chainId: CHAIN_ID });
     const walletAPI = new sdk.WalletAPI({ chainId: CHAIN_ID });
     const file = fs.readFileSync("./accounts.txt", "utf8");
+    const blacklist = []; //fs.readFileSync("./blacklist.txt", "utf8")
 
     const accounts = [
       ...new Set(
@@ -99,7 +107,6 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
     ];
 
     debug(accounts);
-
     // get info from chain / init of LoopringAPI contains process.env.CHAIN_ID
     const { exchangeInfo } = await exchangeAPI.getExchangeInfo();
     debug(exchangeInfo);
@@ -123,6 +130,63 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
       debug("auth:", { eddsaKey, apiKey });
     }
 
+    // retreive the users transaction history
+    const loadTxHistory = async (todo) => {
+      var totalNum = null;
+      var results = [];
+      var exit = false;
+
+      // retreives the NFTs transfer history
+      var now = Date.now();
+      var yesterday = new Date();
+      yesterday = yesterday.setDate(yesterday.getDate() - 1);
+
+      while (totalNum == null || results.length < totalNum) {
+        const historyRes = await userAPI.getUserNFTTransactionHistory(
+          {
+            accountId: accountId,
+            start: yesterday,
+            end: now,
+            offset: results.length,
+            types: [sdk.UserNFTTxTypes.TRANSFER],
+          },
+          apiKey
+        );
+
+        if (!totalNum) {
+          totalNum = historyRes.totalNum;
+        }
+
+        results = results.concat(historyRes.userNFTTxs).sort((x, y) => {
+          return new Date(x.timestamp) < new Date(y.timestamp) ? 1 : -1;
+        });
+      }
+      console.log(`✅ ${results.length} TXs were fetched.`);
+
+      return results.map((i) => {
+        return {
+          id: i.id,
+          account: i.receiverAddress,
+          nftId: i.nftStatusInfo.nftId,
+          timestamp: i.timestamp,
+        };
+      });
+    };
+
+    const txs = await loadTxHistory();
+    addressToSkip = [...new Set(txs.map((tx) => tx.account))];
+    const todo = accounts.filter(
+      (address) =>
+        !addressToSkip.includes(address) && !blacklist.includes(address)
+    );
+
+    console.log(
+      `✴️  ${todo.length} NFTs to send. ${addressToSkip.length} of ${accounts.length} have already been delivered.`
+    );
+    console.log(todo);
+    return;
+
+    // fetch nft apis
     const { userNFTBalances } = await userAPI.getUserNFTBalances(
       { accountId: accountId, limit: 20 },
       apiKey
@@ -170,9 +234,9 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
     const goOn = new Confirm({
       name: "question",
-      message: `Transfer to ${accounts.length} accounts? ${JSON.stringify(
-        accounts
-      )}`,
+      message: `Transfer to ${
+        accounts.length - addressToSkip.length
+      } accounts? ${JSON.stringify(accounts)}`,
     });
 
     if (!(await goOn.run())) {
@@ -190,6 +254,15 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
       if (!account) {
         console.error(`${input} ENS not found`);
+        continue;
+      }
+
+      if (account !== input) {
+        console.info(`✴️ Resolved the address ${input} -> ${account}`);
+      }
+
+      if (shouldSkip(account)) {
+        console.info(`✴️ Skipping ${account}: a transaction already exists`);
         continue;
       }
 
@@ -217,7 +290,7 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
             amount: selectedFee.fee,
           },
           storageId: offchainId,
-          memo: `Sent w/ https://github.com/tomfuertes/loopring-sdk-bulk-send`,
+          memo: memo,
           validUntil: Math.round(Date.now() / 1000) + 30 * 86400,
         },
         web3,
@@ -229,14 +302,14 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
       const transferResult = await userAPI.submitNFTInTransfer(opts);
       const { status, code, message } = transferResult;
-      // debug("transferResult", transferResult);
-      
-      const res = {account, status};
-      if (code) res.code = code;
-      if (message) res.message = message;      
+      debug("transferResult", transferResult);
 
-      console.log("Transfer Result:", res);
-      
+      const res = { account, status };
+      if (code) res.code = code;
+      if (message) res.message = message;
+
+      transfer_results.push(res);
+
       await sleep(250);
     }
 
@@ -244,6 +317,7 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
   } catch (error) {
     console.error(error);
   } finally {
+    // fs.writeFileSync("sent_addresses.txt", addressToSkip.join(",\n"));
     // eslint-disable-next-line no-undef
     process.exit(0);
   }
