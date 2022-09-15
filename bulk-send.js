@@ -78,11 +78,22 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
   const shouldSkip = (address) => addressToSkip.includes(address);
   let memo = "Sent w/ https://github.com/tomfuertes/loopring-sdk-bulk-send";
 
+  const exchangeAPI = new sdk.ExchangeAPI({ chainId: CHAIN_ID });
+  const userAPI = new sdk.UserAPI({ chainId: CHAIN_ID });
+  const walletAPI = new sdk.WalletAPI({ chainId: CHAIN_ID });
+
+  const resolveENS = async (domain) =>
+    domain.endsWith(".eth")
+      ? (
+          await walletAPI.getAddressByENS({
+            fullName: domain,
+          })
+        ).address
+      : domain;
+
   try {
     // console.log({ CHAIN_ID });
-    const exchangeAPI = new sdk.ExchangeAPI({ chainId: CHAIN_ID });
-    const userAPI = new sdk.UserAPI({ chainId: CHAIN_ID });
-    const walletAPI = new sdk.WalletAPI({ chainId: CHAIN_ID });
+
     const file = fs.readFileSync("./accounts.txt", "utf8");
     const blacklist = []; //fs.readFileSync("./blacklist.txt", "utf8")
 
@@ -131,7 +142,7 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
     }
 
     // retreive the users transaction history
-    const loadTxHistory = async (todo) => {
+    const loadTxHistory = async () => {
       var totalNum = null;
       var results = [];
       var exit = false;
@@ -139,7 +150,7 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
       // retreives the NFTs transfer history
       var now = Date.now();
       var yesterday = new Date();
-      yesterday = yesterday.setDate(yesterday.getDate() - 1);
+      yesterday = yesterday.setDate(yesterday.getDate() - 7);
 
       while (totalNum == null || results.length < totalNum) {
         const historyRes = await userAPI.getUserNFTTransactionHistory(
@@ -160,8 +171,11 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
         results = results.concat(historyRes.userNFTTxs).sort((x, y) => {
           return new Date(x.timestamp) < new Date(y.timestamp) ? 1 : -1;
         });
+
+        await sleep(250);
       }
-      console.log(`✅ ${results.length} TXs were fetched.`);
+
+      console.log(`✅ ${results.length} transfers were fetched.`);
 
       return results.map((i) => {
         return {
@@ -172,19 +186,6 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
         };
       });
     };
-
-    const txs = await loadTxHistory();
-    addressToSkip = [...new Set(txs.map((tx) => tx.account))];
-    const todo = accounts.filter(
-      (address) =>
-        !addressToSkip.includes(address) && !blacklist.includes(address)
-    );
-
-    console.log(
-      `✴️  ${todo.length} NFTs to send. ${addressToSkip.length} of ${accounts.length} have already been delivered.`
-    );
-    console.log(todo);
-    return;
 
     // fetch nft apis
     const { userNFTBalances } = await userAPI.getUserNFTBalances(
@@ -203,7 +204,6 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
     debug("selectedId:", selectedId);
 
     const selected = userNFTBalances.find((nft) => nft.nftId === selectedId);
-
     debug("selected", selected);
 
     // get fees to make sure we can afford this
@@ -232,37 +232,50 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
     debug("selectedFeeKey:", selectedFeeKey);
     const selectedFee = fees[selectedFeeKey];
 
+    debug("Fetching tranfer history (to avoid sending duplicates)");
+    // check against past transaction
+    const txs = await loadTxHistory();
+    addressToSkip = [
+      ...new Set(
+        txs.filter((tx) => tx.nftId === selectedId).map((tx) => tx.account)
+      ),
+    ];
+    const todo = accounts.filter(
+      (address) =>
+        !addressToSkip.includes(address) && !blacklist.includes(address)
+    );
+
     const goOn = new Confirm({
       name: "question",
-      message: `Transfer to ${
-        accounts.length - addressToSkip.length
-      } accounts? ${JSON.stringify(accounts)}`,
+      message: `Transfer to ${todo.length} accounts? ${JSON.stringify(todo)}`,
     });
+
+    console.log(
+      `✴️  ${todo.length} NFTs to send. ${addressToSkip.length} of ${accounts.length} have already been delivered.`
+    );
+
+    // return;
 
     if (!(await goOn.run())) {
       throw new Error("User cancelled");
     }
 
-    for (const input of accounts) {
-      const account = input.endsWith(".eth")
-        ? (
-            await walletAPI.getAddressByENS({
-              fullName: input,
-            })
-          ).address
-        : input;
+    for (const input of todo) {
+      const account = await resolveENS(input.toLowerCase());
 
       if (!account) {
         console.error(`${input} ENS not found`);
         continue;
       }
 
-      if (account !== input) {
-        console.info(`✴️ Resolved the address ${input} -> ${account}`);
-      }
-
       if (shouldSkip(account)) {
-        console.info(`✴️ Skipping ${account}: a transaction already exists`);
+        let resolved =
+          account !== input
+            ? `Resolved the address ${input} -> ${account}:`
+            : " ";
+        console.info(
+          `${resolved} Skipping ${account}: a transaction already exists`
+        );
         continue;
       }
 
@@ -312,8 +325,6 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
       await sleep(250);
     }
-
-    //
   } catch (error) {
     console.error(error);
   } finally {
