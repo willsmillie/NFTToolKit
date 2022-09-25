@@ -74,8 +74,8 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
   // JSON Transfer results to write to disk
 
   var transfer_results = [];
-  var addressToSkip = [];
-  const shouldSkip = (address) => addressToSkip.includes(address);
+  var completedTransfers = [];
+  const shouldSkip = (address) => completedTransfers.includes(address);
   let memo = "Sent w/ https://github.com/tomfuertes/loopring-sdk-bulk-send";
 
   const exchangeAPI = new sdk.ExchangeAPI({ chainId: CHAIN_ID });
@@ -228,30 +228,31 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
         .map(([k]) => k),
     });
 
-    const selectedFeeKey = await feeOptions.run();
-    debug("selectedFeeKey:", selectedFeeKey);
-    const selectedFee = fees[selectedFeeKey];
-
     debug("Fetching tranfer history (to avoid sending duplicates)");
     // check against past transaction
     const txs = await loadTxHistory();
-    addressToSkip = [
+    completedTransfers = [
       ...new Set(
         txs.filter((tx) => tx.nftId === selectedId).map((tx) => tx.account)
       ),
     ];
-    const todo = accounts.filter(
-      (address) =>
-        !addressToSkip.includes(address) && !blacklist.includes(address)
+    const pendingTransfers = accounts.filter(
+      (a) => !completedTransfers.includes(a)
     );
+
+    const selectedFeeKey = await feeOptions.run();
+    debug("selectedFeeKey:", selectedFeeKey);
+    const selectedFee = fees[selectedFeeKey];
 
     const goOn = new Confirm({
       name: "question",
-      message: `Transfer to ${todo.length} accounts? ${JSON.stringify(todo)}`,
+      message: `Transfer to ${
+        pendingTransfers.length
+      } accounts? ${JSON.stringify(pendingTransfers)}`,
     });
 
     console.log(
-      `✴️  ${todo.length} NFTs to send. ${addressToSkip.length} of ${accounts.length} have already been delivered.`
+      `✴️ ${completedTransfers.length} of ${accounts.length} have already been delivered.`
     );
 
     // return;
@@ -260,22 +261,17 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
       throw new Error("User cancelled");
     }
 
-    for (const input of todo) {
-      const account = await resolveENS(input.toLowerCase());
+    for (const item of pendingTransfers) {
+      const address = await resolveENS(item.toLowerCase());
 
-      if (!account) {
-        console.error(`${input} ENS not found`);
+      if (!address) {
+        console.error(`${item} ENS not found`);
         continue;
       }
 
-      if (shouldSkip(account)) {
-        let resolved =
-          account !== input
-            ? `Resolved the address ${input} -> ${account}:`
-            : " ";
-        console.info(
-          `${resolved} Skipping ${account}: a transaction already exists`
-        );
+      let completedTransaction = shouldSkip(address);
+      if (completedTransaction) {
+        console.info(`Skipping ${address}: a transaction already exists`);
         continue;
       }
 
@@ -292,7 +288,7 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
           fromAccountId: accountId,
           fromAddress: ETH_ACCOUNT_ADDRESS,
           toAccountId: 0, // toAccountId is not required, input 0 as default
-          toAddress: account,
+          toAddress: address,
           token: {
             tokenId: selected.tokenId,
             nftData: selected.nftData,
@@ -317,7 +313,7 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
       const { status, code, message } = transferResult;
       debug("transferResult", transferResult);
 
-      const res = { account, status };
+      const res = { address, status };
       if (code) res.code = code;
       if (message) res.message = message;
 

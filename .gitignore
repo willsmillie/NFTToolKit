@@ -107,3 +107,8 @@ dist
 
 # TernJS port file
 .tern-port
+
+# Results files should be private
+results.txt
+addresses.txt
+accounts.txt
