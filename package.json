@@ -1,9 +1,12 @@
 {
   "scripts": {
     "lint": "eslint *.js",
-    "start": "node bulk-send.js",
+    "start": "node src/index.js",
     "dev": "nodemon --watch *.js --exec 'npm run lint && npm start'"
   },
+  "include": [
+    "src"
+  ],
   "dependencies": {
     "@loopring-web/loopring-sdk": "^2.0.12",
     "dotenv": "^16.0.1",
