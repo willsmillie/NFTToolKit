@@ -27,7 +27,7 @@ console.log(CHAIN_ID);
 // initialize provider
 const provider = new PrivateKeyProvider(
   ETH_ACCOUNT_PRIVATE_KEY,
-  `https://goerli.infura.io/v3/${INFURA_PROJECT_ID}`
+  `https://mainnet.infura.io/v3/${INFURA_PROJECT_ID}`
 );
 
 const web3 = new Web3(provider);

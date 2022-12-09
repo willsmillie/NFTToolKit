@@ -4,13 +4,6 @@ const { stringToArray } = require("../utils/Address");
 const MyNFTs = require("./MyNFTs");
 
 const TokenHolders = async () => {
-  //   const { accountId, apiKey } = await authenticate();
-
-  //   const lookUpTokensNow = await new Confirm({
-  //     name: "look-up",
-  //     message: "Would you like to run fetch all of your tokens now?",
-  //   }).run();
-
   // get a list of tokens
   var input = await prompt({
     type: "input",
@@ -20,21 +13,28 @@ const TokenHolders = async () => {
   });
 
   var tokenIds = stringToArray(input.tokenIds);
-  if (tokenIds.length === 0) tokenIds = await MyNFTs.run();
+  // if (tokenIds.length === 0) tokenIds = await MyNFTs.run();
 
-  const params = {
-    address: tokenIds[0],
-    // fromBlock: "0x1",
-    // toBlock: "latest",
-    // topics: [
-    //   web3.utils.sha3("adduintevent(uint,uint)"),
-    //   web3.utils.sha3("0x8"),
-    // ],
-  };
+  for (idx in tokenIds) {
+    let token = tokenIds[idx];
 
-  const r = await web3.eth.getTransactionCount(tokenIds[0]);
-  // callback code here
-  console.log(r);
+    // var events = aContract.getPastEvents("Transfer", {
+    //   filter: {},
+    //   fromBlock: 5555555,
+    //   toBlock: 5555555,
+    // });
+
+    let txHistory = await web3.eth.getPastLogs({
+      address: token,
+      fromBlock: "earliest",
+      toBlock: "latest",
+      topics: [
+        "0xc3d58168c5ae7397731d063d5bbf3d657854427343f4c083240f7aacaa2d0f62",
+      ],
+    });
+
+    console.log(txHistory);
+  }
 };
 
 module.exports = {
