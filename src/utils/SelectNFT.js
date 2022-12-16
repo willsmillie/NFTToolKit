@@ -7,7 +7,7 @@ export default (async () => {
   debug("userNFTBalances:", userNFTBalances);
 
   const nftOptions = new Select({
-    name: "color",
+    name: "id",
     message: "Pick an nft",
     choices: userNFTBalances.map((nft) => nft.nftId),
   });

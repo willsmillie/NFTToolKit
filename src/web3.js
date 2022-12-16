@@ -22,8 +22,6 @@ const {
   };
 })();
 
-console.log(CHAIN_ID);
-
 // initialize provider
 const provider = new PrivateKeyProvider(
   ETH_ACCOUNT_PRIVATE_KEY,
