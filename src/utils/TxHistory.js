@@ -1,19 +1,20 @@
-// retreive the users transaction history
-export default const loadTxHistory = async () => {
+// retrieve the users transaction history to processes past transactions
+export default const loadTxHistory = async ({apiKey}) => {
   var totalNum = null;
   var results = [];
   var exit = false;
-
-  // retreives the NFTs transfer history
+  
+  // retrieve the NFTs transfer history
   var now = Date.now();
-  var yesterday = new Date();
-  yesterday = yesterday.setDate(yesterday.getDate() - 7);
+  var before = new Date();
+  let numberOfDays = 7
+  before = before.setDate(before.getDate() - numberOfDays);
 
   while (totalNum == null || results.length < totalNum) {
     const historyRes = await userAPI.getUserNFTTransactionHistory(
       {
         accountId: accountId,
-        start: yesterday,
+        start: before,
         end: now,
         offset: results.length,
         types: [sdk.UserNFTTxTypes.TRANSFER],

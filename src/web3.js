@@ -32,6 +32,7 @@ const web3 = new Web3(provider);
 const exchangeAPI = new sdk.ExchangeAPI({ chainId: CHAIN_ID });
 const userAPI = new sdk.UserAPI({ chainId: CHAIN_ID });
 const walletAPI = new sdk.WalletAPI({ chainId: CHAIN_ID });
+const nftAPI = new sdk.NFTAPI({ chainId: CHAIN_ID });
 
 const signatureKeyPairMock = async (accInfo, exchangeAddress) => {
   const keySeed =
@@ -47,9 +48,11 @@ const signatureKeyPairMock = async (accInfo, exchangeAddress) => {
     walletType: sdk.ConnectorNames.Unknown,
     chainId: parseInt(CHAIN_ID, 10),
   });
+
   return eddsaKey;
 };
 
+// Authenticate the account defined in your .env file
 const authenticate = async () => {
   try {
     // get info from chain / init of LoopringAPI contains process.env.CHAIN_ID
@@ -60,11 +63,11 @@ const authenticate = async () => {
     debug("exchangeInfo", exchangeAddress);
 
     // Get the accountId and other metadata needed for sig
-    debug("ETH_ACCOUNT_ADDRESS", ETH_ACCOUNT_ADDRESS);
+    // debug("ETH_ACCOUNT_ADDRESS", ETH_ACCOUNT_ADDRESS);
     const { accInfo } = await exchangeAPI.getAccount({
       owner: ETH_ACCOUNT_ADDRESS,
     });
-    debug("accInfo", accInfo);
+    // debug("accInfo", accInfo);
     const { accountId } = accInfo;
     debug("accountId", accountId);
 
@@ -74,7 +77,6 @@ const authenticate = async () => {
     if (/5/.test(CHAIN_ID)) {
       debug("auth:", { eddsaKey, apiKey });
     }
-
     return { ...accInfo, apiKey };
   } catch (error) {
     console.error(error);
@@ -82,4 +84,11 @@ const authenticate = async () => {
   }
 };
 
-module.exports = { web3, exchangeAPI, userAPI, walletAPI, authenticate };
+module.exports = {
+  web3,
+  exchangeAPI,
+  userAPI,
+  walletAPI,
+  authenticate,
+  nftAPI,
+};

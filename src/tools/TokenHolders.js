@@ -1,100 +1,96 @@
 const { Select, Confirm, prompt } = require("enquirer");
-const { userAPI, authenticate, web3 } = require("../web3");
+const { nftAPI, userAPI, authenticate, web3 } = require("../web3");
 const { stringToArray } = require("../utils/Address");
-const MyNFTs = require("./MyNFTs");
+const ora = require("ora");
 
-const TokenHolders = async () => {
-  // get a list of tokens
-  var input = await prompt({
+const { nftHolders, getAccount } = require("../utils/Requests");
+const MyNFTs = require("./MyNFTs");
+const sleep = require("../utils/sleep");
+
+// Fetches token holders for a list of NFT Datas
+const TokenHolders = async ({ apiKey, accountId }) => {
+  // Prompt user to input a list of nftDatas
+  const input = await prompt({
     type: "input",
-    name: "tokenIds",
+    name: "nftDatas",
     message:
-      "Enter a comma-delimited list of token IDs, or leave empty view your holdings",
+      "Enter a comma-delimited list of NFT Data, or leave empty all minted tokens",
   });
 
-  var tokenIds = stringToArray(input.tokenIds);
-  if (tokenIds.length == 0 || tokenIds == undefined)
-    tokenIds = ["0xe5c6e1935702cc28c0da959e06196920649a8579"]; //await MyNFTs.run();
+  // convert the list to an array
+  var nftDatas = stringToArray(input.nftDatas);
 
-  for (idx in tokenIds) {
-    let token = tokenIds[idx];
+  // If no text is provided fetch all minted nfts
+  if (nftDatas.length == 0 || nftDatas == undefined) {
+    nftDatas = await (async function () {
+      let res = await MyNFTs.run({ apiKey, accountId });
+      return Object.values(res).map((e) => e.nftData);
+    })();
 
-    // const latest = await web3.eth.getBlock("latest");
-    const logs = await getPastLogs(token, "0", "latest");
-
-    for (i in logs) {
-      let event = logs[i];
-
-      let transaction = web3.eth.abi.decodeLog(
-        [
-          {
-            type: "address",
-            name: "operator",
-            indexed: true,
-          },
-          {
-            type: "address",
-            name: "from",
-            indexed: true,
-          },
-          {
-            type: "address",
-            name: "to",
-            indexed: true,
-          },
-          {
-            type: "uint256",
-            name: "id",
-          },
-          {
-            type: "uint256",
-            name: "value",
-          },
-        ],
-        event.data,
-        [event.topics[1], event.topics[2], event.topics[3]]
-      );
-
-      console.log(
-        `\n` +
-          `New ERC-1155 transaction found in block ${event.blockNumber} with hash ${event.transactionHash}\n` +
-          `Operator: ${transaction.operator}\n` +
-          `From: ${
-            transaction.from === "0x0000000000000000000000000000000000000000"
-              ? "New mint!"
-              : transaction.from
-          }\n` +
-          `To: ${transaction.to}\n` +
-          `id: ${transaction.id}\n` +
-          `value: ${transaction.value}`
-      );
-    }
+    /// this may serve as a replacement, untested tho
+    // nftDatas = await MyNFTs.run({ apiKey, accountId }).then((r) =>
+    //   Object.values(r).map((e) => e.nftData)
+    // );
   }
+
+  // Store the results by creating a list of the account Ids holding token(s)
+  var holdersByToken = {};
+  var allIds = [];
+
+  // For every nft data (loopring id), make a call to the rest endpoint
+  var spinner = ora("[TokenHolders] Fetching holders...").start();
+  for (i in nftDatas) {
+    // update the spinner progress
+    spinner.text = `[TokenHolders] Fetching holders for NFT ${i} of ${nftDatas.length}`;
+    // get the data
+    let data = nftDatas[i];
+    const result = await nftHolders(apiKey, data);
+
+    // add each holder to the results
+    for (idx in result) {
+      var { accountId } = result[idx];
+      holdersByToken[data] = [...(holdersByToken[data] ?? []), accountId];
+      allIds.push(accountId);
+    }
+
+    await sleep(250);
+  }
+
+  // Stop the spinner
+  spinner.stop();
+
+  // resolve the loopring account id (integer) to the hex wallet address
+  let addresses = await resolveAccountIdsToAddresses(apiKey, [
+    ...new Set(allIds),
+  ]);
+
+  return addresses;
 };
 
-async function getPastLogs(address, fromBlock, toBlock) {
-  if (fromBlock <= toBlock) {
-    try {
-      const options = {
-        address: address,
-        fromBlock: fromBlock,
-        toBlock: toBlock,
-        topics: [
-          "0xc3d58168c5ae7397731d063d5bbf3d657854427343f4c083240f7aacaa2d0f62",
-        ],
-      };
-      return await web3.eth.getPastLogs(options);
-    } catch (error) {
-      const midBlock = (fromBlock + toBlock) >> 1;
-      const arr1 = await getPastLogs(address, fromBlock, midBlock);
-      const arr2 = await getPastLogs(address, midBlock + 1, toBlock);
-      return [...arr1, ...arr2];
-    }
+// Resolves a Loopring account Id to its wallet address
+const resolveAccountIdsToAddresses = async (apiKey, accountIds) => {
+  // Display a spinner
+  var spinner = ora("[TokenHolders] Resolving accountIds to addresses").start();
+
+  // Loop over the accounts provided resolving them and appending to the results
+  const results = [];
+  for (i in accountIds) {
+    spinner.text = `[getMetadata] Resolving accountIds to addresses ${i}/${accountIds.length}`;
+    var accountId = accountIds[i];
+    let res = await getAccount(apiKey, accountId);
+    if (res?.owner) results.push(res.owner);
+    await sleep(250);
   }
-  return [];
-}
+
+  // stop the spinner
+  spinner.stop();
+
+  // remove duplicates
+  let uniqueAddresses = [...new Set(results)];
+  return uniqueAddresses;
+};
 
 module.exports = {
-  name: "🔎 Token Holders - Look up current holders for a list of tokenIds",
+  name: "🧩  Token Holders - Look up current holders for a list of tokenIds",
   run: TokenHolders,
 };

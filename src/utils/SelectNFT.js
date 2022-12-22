@@ -1,20 +1,20 @@
-export default (async () => {
+const { nftAPI, userAPI } = require("../web3");
+
+export default (async ({ apiKey, accountId }) => {
   // fetch nft apis
   const { userNFTBalances } = await userAPI.getUserNFTBalances(
-    { accountId: accountId, limit: 20 },
+    { accountId: accountId, limit: 1000 },
     apiKey
   );
-  debug("userNFTBalances:", userNFTBalances);
 
+  // Prompt user to select an NFT
   const nftOptions = new Select({
     name: "id",
-    message: "Pick an nft",
+    message: "Select an nft (by nftId)",
     choices: userNFTBalances.map((nft) => nft.nftId),
   });
 
   const selectedId = await nftOptions.run();
-  debug("selectedId:", selectedId);
-
   const selected = userNFTBalances.find((nft) => nft.nftId === selectedId);
-  debug("selected", selected);
+  return selected;
 })();

@@ -4,7 +4,7 @@ const fs = require("fs");
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-const SendNFTs = async () => {
+const AirDrop = async ({ apiKey, accountId }) => {
   //   var transfer_results = [];
   // var completedTransfers = [];
   // const shouldSkip = (address) => completedTransfers.includes(address);
@@ -91,6 +91,6 @@ const SendNFTs = async () => {
 };
 
 module.exports = {
-  name: "✈️ Send NFTs - Distribute a token to a list of addresses",
-  run: SendNFTs,
+  name: "📦  Air Drop - Distribute a token to a list of addresses",
+  run: AirDrop,
 };
