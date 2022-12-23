@@ -3,6 +3,14 @@
 Utils for interacting & interacting with Loopring & Gamestop marketplace NFT platforms.
 This project was been forked from https://github.com/tomfuertes/loopring-sdk-bulk-send, thanks Tom!
 
+`npm start` will prompt the following questions:
+
+- `📦  Air Drop - Distribute a token to a list of addresses`
+- `🪙   My NFTs - Get a list of minted tokens`
+- `🔎  NFT Lookup - Get metadata for NFTs by id`
+- `🧩  Token Holders - Look up current holders for a list of tokenIds`
+- `👾  ENS Resolver - Get addresses for a list of ENS domains`
+
 ## Installation, Config, and Running
 
 Requires a free https://infura.io/ account.
@@ -32,16 +40,6 @@ cp .env.example .env
 
 npm start
 ```
-
-`npm start` will prompt the following questions:
-
-❯
-
-- `📦  Air Drop - Distribute a token to a list of addresses`
-- `🪙   My NFTs - Get a list of minted tokens`
-- `🔎  NFT Lookup - Get metadata for NFTs by id`
-- `🧩  Token Holders - Look up current holders for a list of tokenIds`
-- `👾  ENS Resolver - Get addresses for a list of ENS domains`
 
 ## FAQ
 
