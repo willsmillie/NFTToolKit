@@ -1,6 +1,6 @@
 # NFT Tool Kit
 
-Utils for interacting & interacting with Loopring & Gamestop marketplace NFT platforms.
+Utils for interacting with Loopring & Gamestop marketplace NFT platforms.
 This project was been forked from https://github.com/tomfuertes/loopring-sdk-bulk-send, thanks Tom!
 
 `npm start` will prompt the following questions:
@@ -56,5 +56,6 @@ PRs are welcome! There are some todos below if you are interested in ways to hel
 
 - Add Tests
 - Loop CLI so it doesn't exit
+- Thread Ripper util: prompt for a twitter or reddit thread and parse all the address replies
 - Add better env / context to prevent passing keys arround
 - Refactor / clean code
