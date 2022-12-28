@@ -1,12 +1,11 @@
 const { Select, Confirm, prompt } = require("enquirer");
 const { nftAPI, userAPI, authenticate, web3 } = require("../web3");
-const { stringToArray } = require("../utils/Address");
 
 const { nftHolders, getAccount } = require("../utils/Requests");
-const { resolveENS } = require("../utils/ENS");
-const sleep = require("../utils/sleep");
+const { sleep, resolveENS, stringToArray } = require("../utils");
 
-const ENSResolver = async ({ apiKey, accountId }) => {
+const ENSResolver = async (context) => {
+  const { apiKey, accountId } = context;
   // Ask for a comma-delimited list of addresses (hex or ens)
   const input = await prompt({
     type: "input",

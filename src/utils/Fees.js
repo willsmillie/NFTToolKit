@@ -8,7 +8,6 @@ export default (async () => {
     },
     apiKey
   );
-  debug("fees", fees);
 
   const USD_COST = parseInt((fees["USDC"] || fees["USDT"]).fee, 10) / 1e6;
   console.log(USD_COST);

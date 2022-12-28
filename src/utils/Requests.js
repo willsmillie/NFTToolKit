@@ -62,8 +62,10 @@ const getMints = async (apiKey, accountId) => {
 };
 
 // GET NFT Datas by minter, tokenAddress, and NFT Id
-const getNFTData = async (apiKey, minter, tokenAddress, nftId) => {
-  let url = `https://api3.loopring.io/api/v3/nft/info/nftData?minter=${minter}&tokenAddress=${tokenAddress}&nftId=${nftId}`;
+const getNFTData = async (apiKey, nftId) => {
+  const minter = process.env.ETH_ACCOUNT_ADDRESS;
+
+  let url = `https://api3.loopring.io/api/v3/nft/info/nftData?minter=${minter}&nftId=${nftId}`;
   return await makeRequest(url, apiKey).then((r) => r ?? []);
 };
 

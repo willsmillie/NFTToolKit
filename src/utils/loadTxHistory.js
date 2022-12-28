@@ -1,14 +1,35 @@
+const sleep = require("./sleep");
+const ora = require("ora"); // spinner for async requests
+const ProgressBar = require("ora-progress-bar");
+
+const {
+  walletAPI,
+  nftAPI,
+  userAPI,
+  authenticate,
+  exchangeAPI,
+  web3,
+  sdk,
+} = require("../web3");
+
 // retrieve the users transaction history to processes past transactions
-export default const loadTxHistory = async ({apiKey}) => {
+const loadTxHistory = async (context) => {
+  const { apiKey, accountId, eddsaKey, exchangeAddress } = context;
   var totalNum = null;
   var results = [];
   var exit = false;
-  
+
   // retrieve the NFTs transfer history
   var now = Date.now();
   var before = new Date();
-  let numberOfDays = 7
+  let numberOfDays = 7 * 4;
   before = before.setDate(before.getDate() - numberOfDays);
+
+  // Transfer nft to addresses
+  const progressBar = new ProgressBar(
+    "[getTxHistory] Getting transaction history...",
+    0
+  );
 
   while (totalNum == null || results.length < totalNum) {
     const historyRes = await userAPI.getUserNFTTransactionHistory(
@@ -24,16 +45,16 @@ export default const loadTxHistory = async ({apiKey}) => {
 
     if (!totalNum) {
       totalNum = historyRes.totalNum;
+      progressBar.updateGoal(totalNum);
     }
 
+    progressBar.progress(historyRes.userNFTTxs.length);
     results = results.concat(historyRes.userNFTTxs).sort((x, y) => {
       return new Date(x.timestamp) < new Date(y.timestamp) ? 1 : -1;
     });
 
     await sleep(250);
   }
-
-  console.log(`✅ ${results.length} transfers were fetched.`);
 
   return results.map((i) => {
     return {
@@ -44,3 +65,5 @@ export default const loadTxHistory = async ({apiKey}) => {
     };
   });
 };
+
+module.exports = loadTxHistory;

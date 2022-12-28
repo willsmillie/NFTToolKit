@@ -4,11 +4,13 @@ const {
   getMints,
   getInfoForNFTDatas,
 } = require("../utils/Requests");
-const sleep = require("../utils/sleep");
+const { sleep } = require("../utils");
 const fs = require("fs");
 
 // Fetches NFTs minted by the current account
-const MyNFTs = async ({ apiKey, accountId }) => {
+const MyNFTs = async (context) => {
+  const { apiKey, accountId } = context;
+
   // Fetch minted nfts and get their nftData
   const nfts = await getMints(apiKey, accountId);
   if (!nfts) return console.log("NO NFTS :(");

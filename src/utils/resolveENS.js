@@ -9,4 +9,4 @@ const resolveENS = async (domain) =>
       ).address
     : domain;
 
-module.exports = { resolveENS };
+module.exports = resolveENS;

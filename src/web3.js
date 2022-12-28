@@ -77,7 +77,7 @@ const authenticate = async () => {
     if (/5/.test(CHAIN_ID)) {
       debug("auth:", { eddsaKey, apiKey });
     }
-    return { ...accInfo, apiKey };
+    return { ...accInfo, apiKey, eddsaKey, exchangeAddress };
   } catch (error) {
     console.error(error);
     return;
@@ -91,4 +91,5 @@ module.exports = {
   walletAPI,
   authenticate,
   nftAPI,
+  sdk,
 };

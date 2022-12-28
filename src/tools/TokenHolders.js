@@ -1,24 +1,25 @@
 const { Select, Confirm, prompt } = require("enquirer");
-const { nftAPI, userAPI, authenticate, web3 } = require("../web3");
-const { stringToArray } = require("../utils/Address");
 const ora = require("ora");
 
-const { nftHolders, getAccount } = require("../utils/Requests");
 const MyNFTs = require("./MyNFTs");
-const sleep = require("../utils/sleep");
+const { nftAPI, userAPI, authenticate, web3 } = require("../web3");
+const { nftHolders, getAccount } = require("../utils/Requests");
+const { sleep, stringToArray } = require("../utils");
 
 // Fetches token holders for a list of NFT Datas
-const TokenHolders = async ({ apiKey, accountId }) => {
+const TokenHolders = async ({ apiKey, accountId, nft }) => {
   // Prompt user to input a list of nftDatas
-  const input = await prompt({
-    type: "input",
-    name: "nftDatas",
-    message:
-      "Enter a comma-delimited list of NFT Data, or leave empty all minted tokens",
-  });
+  const input =
+    nft ??
+    (await prompt({
+      type: "input",
+      name: "nftData",
+      message:
+        "Enter a comma-delimited list of NFT Data, or leave empty all minted tokens",
+    }));
 
   // convert the list to an array
-  var nftDatas = stringToArray(input.nftDatas);
+  var nftDatas = stringToArray(input.nftData);
 
   // If no text is provided fetch all minted nfts
   if (nftDatas.length == 0 || nftDatas == undefined) {
