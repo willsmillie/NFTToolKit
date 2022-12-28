@@ -7,7 +7,7 @@ function tryReadFile(pathItem) {
     try {
       return fs.readFileSync(pathItem, "utf8");
     } catch (error) {
-      console.log(error);
+      return pathItem;
     }
   } else {
     return pathItem;

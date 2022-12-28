@@ -33,6 +33,7 @@ const Main = async () => {
     let data = JSON.stringify(result, null, 2);
     fs.writeFileSync("output.json", data);
     console.log(result);
+    console.log("ℹ️  Written to output.json");
   }
 };
 

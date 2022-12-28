@@ -31,10 +31,6 @@ const MyNFTs = async (context) => {
     metadata[nftId] = { ...meta, ...info, ...nft };
   }
 
-  // write the metadata results to a matadata.json file
-  let data = JSON.stringify(metadata, null, 2);
-  fs.writeFileSync("metadata.json", data);
-
   return metadata;
 };
 

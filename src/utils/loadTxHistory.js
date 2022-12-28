@@ -22,7 +22,7 @@ const loadTxHistory = async (context) => {
   // retrieve the NFTs transfer history
   var now = Date.now();
   var before = new Date();
-  let numberOfDays = 7 * 4;
+  let numberOfDays = 7;
   before = before.setDate(before.getDate() - numberOfDays);
 
   // Transfer nft to addresses

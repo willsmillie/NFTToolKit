@@ -5,6 +5,7 @@ const {
   tryReadFile,
   blacklist,
   loadTxHistory,
+  resolveENS,
 } = require("../utils");
 const ora = require("ora"); // spinner for async requests
 const ProgressBar = require("ora-progress-bar");
@@ -57,7 +58,17 @@ const AirDrop = async (context) => {
     });
 
     var selectedAddresses = stringToArray(tryReadFile(input.addresses));
-    return selectedAddresses;
+
+    // resolve the input addresses throttling the loop to prevent rate limiting
+    var resolvedAddresses = [];
+    for (i in selectedAddresses) {
+      let address = selectedAddresses[i];
+      let r = await resolveENS(address);
+      resolvedAddresses.push(r);
+      sleep(250);
+    }
+
+    return resolvedAddresses;
   };
 
   // Get Fees

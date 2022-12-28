@@ -1,10 +1,10 @@
 const { walletAPI } = require("../web3");
 
 const resolveENS = async (domain) =>
-  domain.endsWith(".eth")
+  domain.toLowerCase().endsWith(".eth")
     ? (
         await walletAPI.getAddressByENS({
-          fullName: domain,
+          fullName: domain.toLowerCase(),
         })
       ).address
     : domain;
