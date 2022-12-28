@@ -7,7 +7,6 @@ This project was been forked from https://github.com/tomfuertes/loopring-sdk-bul
 
 - `📦  Air Drop - Distribute a token to a list of addresses`
 - `🪙   My NFTs - Get a list of minted tokens`
-- `🔎  NFT Lookup - Get metadata for NFTs by id`
 - `🧩  Token Holders - Look up current holders for a list of tokenIds`
 - `👾  ENS Resolver - Get addresses for a list of ENS domains`
 
