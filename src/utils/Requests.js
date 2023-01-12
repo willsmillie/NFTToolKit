@@ -71,8 +71,30 @@ const getNFTData = async (apiKey, nftId) => {
 
 // GET Holders for NFT Data
 const nftHolders = async (apiKey, nftData) => {
-  let url = `https://api3.loopring.io/api/v3/nft/info/nftHolders?nftData=${nftData}`;
-  return await makeRequest(url, apiKey).then((e) => e.nftHolders);
+  const spinner = ora("[getHolders] Fetching...").start();
+
+  var results = [];
+  var totalNum = 1;
+  var error = null;
+  var reqs = 0;
+
+  while (results.length < totalNum) {
+    let url = `https://api3.loopring.io/api/v3/nft/info/nftHolders?nftData=${nftData}&offset=${results.length}`;
+    var res = await makeRequest(url, apiKey);
+
+    if (res?.totalNum) totalNum = res.totalNum;
+    if (res?.nftHolders?.length === 0 || res?.nftHolders == undefined) break;
+    results.push(...(res?.nftHolders ?? []));
+    reqs++;
+    sleep(250);
+  }
+
+  results && !error
+    ? spinner.succeed(`[getHolders] Fetched ${results.length} holders!\n`)
+    : spinner.fail(`[getHolders] Failed to fetch holders:!\n${error ?? ""}`);
+  spinner.stop();
+
+  return results;
 };
 
 // Get info token info

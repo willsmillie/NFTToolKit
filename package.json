@@ -17,6 +17,7 @@
     "moment": "^2.29.4",
     "ora": "^5.4.1",
     "ora-progress-bar": "^1.2.1",
+    "sqlite3": "^5.1.4",
     "truffle-privatekey-provider": "^1.5.0",
     "web3": "^1.7.3"
   },
