@@ -1,7 +1,7 @@
 # NFT Tool Kit
 
 Utils for interacting with Loopring & Gamestop marketplace NFT platforms.
-This project was been forked from https://github.com/tomfuertes/loopring-sdk-bulk-send, thanks Tom!
+This project was forked from https://github.com/tomfuertes/loopring-sdk-bulk-send, thanks Tom!
 
 `npm start` will prompt the following questions:
 
