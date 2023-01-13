@@ -15,7 +15,6 @@ const MyNFTs = async (context) => {
   const nfts = await getMints(apiKey, accountId);
   if (!nfts) return console.log("NO NFTS :(");
   let nftDatas = nfts.map((e) => e.nftData);
-  // console.log(nfts);
 
   // Load metadata info from the nftData and get nftIds
   let infos = await getInfoForNFTDatas(apiKey, nftDatas);
