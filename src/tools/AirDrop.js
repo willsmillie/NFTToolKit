@@ -7,9 +7,17 @@ const {
   loadTxHistory,
   resolveENS,
 } = require("../utils");
+
+const {
+  getMetadataForNFTIds,
+  getMints,
+  getInfoForNFTDatas,
+} = require("../utils/Requests");
+
 const ora = require("ora"); // spinner for async requests
 const ProgressBar = require("ora-progress-bar");
 const TokenHolders = require("./TokenHolders");
+
 require("console.mute"); // used for the ability to silence some of Loopring's logs
 
 const {
@@ -29,21 +37,18 @@ const AirDrop = async (context) => {
 
   // Select NFT
   const selectNFT = async () => {
-    const { userNFTBalances } = await userAPI.getUserNFTBalances(
-      { accountId: accountId, limit: 1000 },
-      apiKey
-    );
+    var nfts = await getMints(apiKey, accountId);
+    var nftIds = nfts.map((e) => e.nftId);
 
     // Prompt user to select an NFT
     const nftOptions = new Select({
       name: "id",
-      message: "Select an nft (by nftId)",
-      choices: userNFTBalances.map((nft) => nft.nftId),
+      message: `Select an nft (by nftId) (${nftIds.length} results)`,
+      choices: nftIds,
     });
 
     const selectedId = await nftOptions.run();
-    const selected = userNFTBalances.find((nft) => nft.nftId === selectedId);
-
+    const selected = nfts.find((nft) => nft.nftId === selectedId);
     return selected;
   };
 
@@ -65,7 +70,6 @@ const AirDrop = async (context) => {
       let address = selectedAddresses[i];
       let r = await resolveENS(address);
       resolvedAddresses.push(r);
-      sleep(250);
     }
 
     return resolvedAddresses;
@@ -183,7 +187,7 @@ const AirDrop = async (context) => {
     if (!(await goOn.run())) throw new Error("User cancelled");
 
     // Transfer nft to addresses
-    const progressBar = new ProgressBar(
+    var progressBar = new ProgressBar(
       "[AirDrop] Transferring...",
       uniqueAddresses.length
     );
