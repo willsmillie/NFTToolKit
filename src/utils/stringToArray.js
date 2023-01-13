@@ -1,9 +1,4 @@
-// const fs = require("fs");
-// const file = fs.readFileSync("./accounts.txt", "utf8");
-// const accounts = [...new Set(file)];
-
 const stringToArray = (string) => {
-  console.info(string);
   return (
     string
       .replace(/[\[\]]/g, "") // removes brackets from a json array
