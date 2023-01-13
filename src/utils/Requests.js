@@ -31,26 +31,42 @@ const getMints = async (apiKey, accountId) => {
   const spinner = ora("[getMints] Fetching...").start();
 
   var results = [];
-  var totalNum = 1;
+  var totalNum = null;
   var error = null;
   var reqs = 0;
 
-  while (results.length < totalNum) {
-    var url = `https://api3.loopring.io/api/v3/user/nft/mints?accountId=${accountId}`;
-
+  while ((totalNum === null) | (results.length < totalNum)) {
+    // var url = `https://api3.loopring.io/api/v3/user/nft/mints?accountId=${accountId}&limit=25`;
+    // opting for balance due to a more preferable response signature
+    var url = `https://api3.loopring.io/api/v3/user/nft/balances?accountId=${accountId}&limit=50`;
     var lastResult = results[results.length - 1];
     if (lastResult) {
-      let createdAt = lastResult.createdAt;
-      url = url + `&end=${createdAt}`;
+      url = url + `&offset=${results.length}`;
     }
 
     var res = await makeRequest(url, apiKey);
-    if (res?.totalNum) totalNum = res.totalNum;
-    if (res?.mints?.length === 0 || res?.mints == undefined) break;
+    if (!totalNum && res?.totalNum) totalNum = res.totalNum;
+    if (res?.data?.length === 0 || res?.data == undefined) {
+      console.log(results.length);
+      break;
+    }
 
-    results.push(...(res?.mints ?? []));
+    for (i in res.data) {
+      let nft = res.data[i];
+      if (!results.includes((e) => e.id === nft.id)) {
+        results.push(nft);
+      }
+    }
+
+    let minterOfTokens = results.filter(
+      (e) => e.minterAddress === process.env["ETH_ACCOUNT_ADDRESS"]
+    );
+
+    let unique = new Set([...results]);
+    console.log([...unique].length);
+
     reqs++;
-    sleep(250);
+    await sleep(250);
   }
 
   results && !error
@@ -64,7 +80,6 @@ const getMints = async (apiKey, accountId) => {
 // GET NFT Datas by minter, tokenAddress, and NFT Id
 const getNFTData = async (apiKey, nftId) => {
   const minter = process.env.ETH_ACCOUNT_ADDRESS;
-
   let url = `https://api3.loopring.io/api/v3/nft/info/nftData?minter=${minter}&nftId=${nftId}`;
   return await makeRequest(url, apiKey).then((r) => r ?? []);
 };
@@ -74,19 +89,19 @@ const nftHolders = async (apiKey, nftData) => {
   const spinner = ora("[getHolders] Fetching...").start();
 
   var results = [];
-  var totalNum = 1;
+  var totalNum = null;
   var error = null;
   var reqs = 0;
 
-  while (results.length < totalNum) {
+  while ((totalNum === null) | (results.length < totalNum)) {
     let url = `https://api3.loopring.io/api/v3/nft/info/nftHolders?nftData=${nftData}&offset=${results.length}`;
     var res = await makeRequest(url, apiKey);
 
-    if (res?.totalNum) totalNum = res.totalNum;
+    if (!totalNum && res?.totalNum) totalNum = res.totalNum;
     if (res?.nftHolders?.length === 0 || res?.nftHolders == undefined) break;
     results.push(...(res?.nftHolders ?? []));
     reqs++;
-    sleep(250);
+    await sleep(250);
   }
 
   results && !error
@@ -108,6 +123,7 @@ const getInfoForNFTDatas = async (apiKey, nftDatas) => {
   while (results.length < nftDatas.length) {
     var batch = [];
 
+    // create a batch of datas to request together
     for (var i = 0; i < 25; i++) {
       let element = nftDatas[offset + i];
       if (element === null || element === undefined) break;
@@ -119,7 +135,7 @@ const getInfoForNFTDatas = async (apiKey, nftDatas) => {
     if (response.size == 0 || response == null) break;
     results = [...results, ...response];
     offset += 25;
-    sleep(250);
+    await sleep(250);
   }
 
   results && !error
@@ -150,7 +166,6 @@ const getMetadataForNFTIds = async (nftIds) => {
       .then((r) => {
         let json = r.json();
         if (json) return json;
-        console.log(r);
       })
       .catch((e) => {
         spinner.warn(`Failed to fetch IPFS cid (${cid}) for token: ${id}`);
@@ -160,7 +175,7 @@ const getMetadataForNFTIds = async (nftIds) => {
       results[id] = res;
     }
 
-    sleep(250);
+    await sleep(250);
   }
 
   results
