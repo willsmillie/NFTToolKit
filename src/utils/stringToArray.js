@@ -3,8 +3,10 @@
 // const accounts = [...new Set(file)];
 
 const stringToArray = (string) => {
+  console.info(string);
   return (
     string
+      .replace(/[\[\]]/g, "") // removes brackets from a json array
       .split("\n")
       .map((line) => line.trim())
       .filter((line) => !line.startsWith("#"))
