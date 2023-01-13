@@ -159,7 +159,7 @@ const AirDrop = async (context) => {
     let pending_holders = addresses.filter(
       (address) =>
         // has not been transfered
-        !txs.find((tx) => tx.account === address) &&
+        !txs.find((tx) => tx.account === address && tx.nftId === nft.nftId) &&
         // is not blacklisted
         !blacklist.find((add) => add === address)
     );
