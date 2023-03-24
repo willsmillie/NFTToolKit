@@ -8,11 +8,7 @@ const {
   resolveENS,
 } = require("../utils");
 
-const {
-  getMetadataForNFTIds,
-  getMints,
-  getInfoForNFTDatas,
-} = require("../utils/Requests");
+const { getMints } = require("../utils/Requests");
 
 const ora = require("ora"); // spinner for async requests
 const ProgressBar = require("ora-progress-bar");
@@ -20,15 +16,7 @@ const TokenHolders = require("./TokenHolders");
 
 require("console.mute"); // used for the ability to silence some of Loopring's logs
 
-const {
-  walletAPI,
-  nftAPI,
-  userAPI,
-  authenticate,
-  exchangeAPI,
-  web3,
-  sdk,
-} = require("../web3");
+const { userAPI, web3, sdk } = require("../web3");
 
 const AirDrop = async (context) => {
   const { apiKey, accountId, eddsaKey, exchangeAddress } = context;
@@ -207,7 +195,7 @@ const AirDrop = async (context) => {
       } catch (error) {
         console.log(error);
       }
-      await sleep(250);
+      await sleep(50);
     }
   } catch (error) {
     console.log(error);

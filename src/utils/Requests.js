@@ -33,7 +33,6 @@ const getMints = async (apiKey, accountId) => {
   var results = [];
   var totalNum = null;
   var error = null;
-  var reqs = 0;
 
   while ((totalNum === null) | (results.length < totalNum)) {
     // var url = `https://api3.loopring.io/api/v3/user/nft/mints?accountId=${accountId}&limit=25`;
@@ -57,15 +56,9 @@ const getMints = async (apiKey, accountId) => {
         results.push(nft);
       }
     }
-
-    let minterOfTokens = results.filter(
-      (e) => e.minterAddress === process.env["ETH_ACCOUNT_ADDRESS"]
-    );
-
     let unique = new Set([...results]);
     console.log([...unique].length);
 
-    reqs++;
     await sleep(250);
   }
 
@@ -74,7 +67,11 @@ const getMints = async (apiKey, accountId) => {
     : spinner.fail(`[getMints] Failed to fetch NFTs:!\n${error ?? ""}`);
   spinner.stop();
 
-  return results;
+  let minterOfTokens = results.filter((e) => {
+    return e.minter === process.env["ETH_ACCOUNT_ADDRESS"].toLowerCase();
+  });
+
+  return minterOfTokens;
 };
 
 // GET NFT Datas by minter, tokenAddress, and NFT Id
@@ -91,7 +88,6 @@ const nftHolders = async (apiKey, nftData) => {
   var results = [];
   var totalNum = null;
   var error = null;
-  var reqs = 0;
 
   while ((totalNum === null) | (results.length < totalNum)) {
     let url = `https://api3.loopring.io/api/v3/nft/info/nftHolders?nftData=${nftData}&offset=${results.length}`;
@@ -100,7 +96,6 @@ const nftHolders = async (apiKey, nftData) => {
     if (!totalNum && res?.totalNum) totalNum = res.totalNum;
     if (res?.nftHolders?.length === 0 || res?.nftHolders == undefined) break;
     results.push(...(res?.nftHolders ?? []));
-    reqs++;
     await sleep(250);
   }
 
@@ -151,8 +146,6 @@ const getInfoForNFTDatas = async (apiKey, nftDatas) => {
 // Gets the metadata from the pinned IPFS cid via a https gateway
 const getMetadataForNFTIds = async (nftIds) => {
   if (!nftIds) return;
-  let uniqueIds = new Set([...nftIds]);
-
   const spinner = ora("[getMetadata] Fetching...").start();
 
   var results = {};
@@ -170,7 +163,6 @@ const getMetadataForNFTIds = async (nftIds) => {
       .catch((e) => {
         spinner.warn(`Failed to fetch IPFS cid (${cid}) for token: ${id}`);
       });
-
     if (res) {
       results[id] = res;
     }

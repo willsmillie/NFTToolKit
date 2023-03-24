@@ -23,15 +23,9 @@ const TokenHolders = async ({ apiKey, accountId, nft }) => {
 
   // If no text is provided fetch all minted nfts
   if (nftDatas.length == 0 || nftDatas == undefined) {
-    nftDatas = await (async function () {
-      let res = await MyNFTs.run({ apiKey, accountId });
-      return Object.values(res).map((e) => e.nftData);
-    })();
-
-    /// this may serve as a replacement, untested tho
-    // nftDatas = await MyNFTs.run({ apiKey, accountId }).then((r) =>
-    //   Object.values(r).map((e) => e.nftData)
-    // );
+    nftDatas = await MyNFTs.run({ apiKey, accountId }).then((r) =>
+      Object.values(r).map((e) => e.nftData)
+    );
   }
 
   // Store the results by creating a list of the account Ids holding token(s)

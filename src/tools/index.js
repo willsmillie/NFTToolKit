@@ -11,6 +11,7 @@ const { sleep } = require("../utils"); // async method
 const choices = [
   require("./AirDrop"),
   require("./MyNFTs"),
+  require("./Metadata"),
   // require("./ThreadRipper"),
   require("./TokenHolders"),
   require("./ENSResolver"),

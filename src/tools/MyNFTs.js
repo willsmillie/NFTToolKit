@@ -1,11 +1,4 @@
-const { nftAPI, userAPI } = require("../web3");
-const {
-  getMetadataForNFTIds,
-  getMints,
-  getInfoForNFTDatas,
-} = require("../utils/Requests");
-const { sleep } = require("../utils");
-const fs = require("fs");
+const { getMints, getInfoForNFTDatas } = require("../utils/Requests");
 
 // Fetches NFTs minted by the current account
 const MyNFTs = async (context) => {
@@ -18,19 +11,8 @@ const MyNFTs = async (context) => {
 
   // Load metadata info from the nftData and get nftIds
   let infos = await getInfoForNFTDatas(apiKey, nftDatas);
-  let nftIds = infos.map((e) => e.nftId);
 
-  // Fetch metadata and assemble the results into the metadata
-  var metadata = await getMetadataForNFTIds(nftIds);
-  for (nftId in metadata) {
-    let meta = metadata[nftId];
-    let info = infos.find((e) => e.nftId === nftId);
-    let nft = nfts.find((e) => e.nftData === info.nftData);
-
-    metadata[nftId] = { ...meta, ...info, ...nft };
-  }
-
-  return metadata;
+  return infos;
 };
 
 module.exports = {
